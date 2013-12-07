@@ -81,13 +81,15 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // we will execute the command at most once.
   if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
       static uint32_t parent_node_id = 0;
-      char* parent_node_name = malloc(strlen("remodel_parent") + 10 + 1);
-      sprintf(parent_node_name, "remodel_parent%d", parent_node_id);
+      uint32_t parent_node_name_len = strlen("remodel_parent") + 10 + 1;
+      char* parent_node_name = malloc(parent_node_name_len);
+      snprintf(parent_node_name, parent_node_name_len, "remodel_parent%d", parent_node_id);
       parent_node_id++;
 
       static uint32_t child_node_id = 0;
-      char* child_node_name = malloc(strlen("remodel_child") + 10 + 1);
-      sprintf(child_node_name, "remodel_child%d", child_node_id);
+      uint32_t child_node_name_len = strlen("remodel_child") + 10 + 1;
+      char* child_node_name = malloc(child_node_name_len);
+      snprintf(child_node_name, parent_node_name_len, "remodel_child%d", child_node_id);
       child_node_id++;
 
       array_t* parent_node = array_new();

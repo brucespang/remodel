@@ -79,7 +79,7 @@ static void queue_grow(queue_t* queue, uint32_t new_size) {
 void queue_enqueue(queue_t* queue, void* val) {
   pthread_mutex_lock(&queue->lock);
 
-  while(!queue_enqueue_locked(queue, val)) {
+  while (!queue_enqueue_locked(queue, val)) {
     queue_grow(queue, 2*queue->max_size+1);
   }
 

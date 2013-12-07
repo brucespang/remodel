@@ -27,7 +27,7 @@ typedef struct ht {
 } ht_t;
 typedef ck_hs_iterator_t ht_iterator_t;
 
-ht_t* ht_new(unsigned long capacity);
+ht_t* ht_new(uint32_t capacity);
 void* ht_get(ht_t* ht, const void* key, size_t key_len);
 bool ht_put(ht_t* ht, const void* key, size_t key_len, void* value);
 void* ht_remove(ht_t* ht, const void* key, size_t key_len);

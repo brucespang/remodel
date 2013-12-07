@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -61,7 +60,7 @@ char* md5sum(FILE* file) {
 
   char* res = malloc(2*MD5_DIGEST_LENGTH+1);
   for (uint32_t i = 0; i < MD5_DIGEST_LENGTH; i++) {
-    sprintf(&res[2*i], "%02x", md5[i]);
+    snprintf(&res[2*i], sizeof(&res[2*i]), "%02x", md5[i]);
   }
   return res;
 }
@@ -83,7 +82,7 @@ void mkdirp(char* path, mode_t mode) {
     char v = *p;
     *p = '\0';
 
-    if(mkdir(path, mode) == -1 && errno != EEXIST) {
+    if (mkdir(path, mode) == -1 && errno != EEXIST) {
       fprintf(stderr, "error: mkdir(%s): %s\n", p, strerror(errno));
       *p = v;
       break;
@@ -122,7 +121,7 @@ bool file_changed(const char* path) {
     res = true;
   } else {
     old_md5 = read_file(cache_file);
-    if(old_md5 == NULL) {
+    if (old_md5 == NULL) {
       fprintf(stderr, "[remodel] fread(%s): %s\n", cache_path, strerror(errno));
       res = true;
       goto exit;
@@ -141,7 +140,7 @@ bool file_changed(const char* path) {
   // tmp file with the current thread's identifier and rename it to the original file name.
   uint32_t tmp_cache_path_len = cache_path_len + 1 + 3 + 1 + 10;
   tmp_cache_path = malloc(tmp_cache_path_len + 1);
-  sprintf(tmp_cache_path, "%s.tmp.%p", cache_path, pthread_self());
+  snprintf(tmp_cache_path, tmp_cache_path_len, "%s.tmp.%p", cache_path, pthread_self());
   FILE* tmp_cache_file = fopen(tmp_cache_path, "w");
   if (!tmp_cache_file) {
     goto exit;

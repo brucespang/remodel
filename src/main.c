@@ -54,7 +54,7 @@ uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t*
     if (component->len > 1) {
       fprintf(stderr, "error: dependency graph contains cycle:\n");
       fprintf(stderr, "  [");
-      for(uint32_t i = 0; i < component->len; i++) {
+      for (uint32_t i = 0; i < component->len; i++) {
         remodel_node_t* node = array_get(component, i);
         fprintf(stderr, "%s", node->name);
         if (i != component->len - 1) {

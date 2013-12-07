@@ -65,7 +65,7 @@ run: compile
 .PHONY: check
 check:
 	./bin/clint.sh
-	cppcheck --enable=all --error-exitcode=1 .
+	cppcheck --enable=all --error-exitcode=1 -I src/parse.c -I src/scan.c .
 
 .PHONY: test
 test: compile $(test_binaries)

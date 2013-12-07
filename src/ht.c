@@ -46,7 +46,7 @@ unsigned long ht_hash(const void* e, unsigned long seed) {
   return h[0];
 }
 
-ht_t* ht_new(unsigned long capacity) {
+ht_t* ht_new(uint32_t capacity) {
   ht_t* ht = calloc(1, sizeof(ht_t));
   assert(ht);
 
