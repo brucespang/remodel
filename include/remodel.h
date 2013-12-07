@@ -48,9 +48,13 @@ typedef struct {
 
 typedef struct {
   bool debug;
+  bool generate_graph;
 } remodel_options_t;
 
-remodel_options_t options;
+static remodel_options_t options = {
+  .debug = false,
+  .generate_graph = false
+};
 
 extern parser_edges_t* edges;
 

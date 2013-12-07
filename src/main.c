@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   uint32_t num_threads = DEFAULT_NUM_THREADS;
 
   char c;
-  while ((c = getopt(argc, argv, "h:v:p:d")) != -1) {
+  while ((c = getopt(argc, argv, "h:v:p:gd")) != -1) {
     switch (c) {
     case 'h':
       fprintf(stderr, usage, argv[0]);
@@ -123,6 +123,9 @@ int main(int argc, char** argv) {
     case 'd':
       fprintf(stderr, "[REMODEL] debug mode enabled\n");
       options.debug = true;
+      break;
+    case 'g':
+      options.generate_graph = true;
       break;
     default:
       fprintf(stderr, usage, argv[0]);
@@ -140,7 +143,28 @@ int main(int argc, char** argv) {
 
   remodel_graph_t* graph = remodel_load_file(remodel_file);
   validate_graph(graph);
-  remodel_execute(graph, num_threads);
+  if (options.generate_graph) {
+    printf("digraph g {\n");
+    ht_entry_t* entry;
+    ht_iterator_t iter = HT_ITERATOR_INITIALIZER;
+    while (ht_next(graph->nodes, &iter, &entry)) {
+      remodel_node_t* parent = entry->value;
+
+      ht_entry_t* child_entry;
+      ht_iterator_t child_iter = HT_ITERATOR_INITIALIZER;
+      while (ht_next(parent->children, &child_iter, &child_entry)) {
+        remodel_edge_t* edge = child_entry->value;
+        printf("\t\"%s\" -> \"%s\"", parent->name, edge->to->name);
+        if (edge->command) {
+          printf(" [label=\"%s\"]", edge->command);
+        }
+        printf(";\n");
+      }
+    }
+    printf("}\n");
+  } else {
+    remodel_execute(graph, num_threads);
+  }
 
   return 0;
 }
