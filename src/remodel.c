@@ -80,31 +80,31 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // to do this, we replace multiple parents and multiple children with a node, so that
   // we will execute the command at most once.
   if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
-      static uint32_t parent_node_id = 0;
-      uint32_t parent_node_name_len = strlen("remodel_parent") + 10 + 1;
-      char* parent_node_name = malloc(parent_node_name_len);
-      snprintf(parent_node_name, parent_node_name_len, "remodel_parent%d", parent_node_id);
-      parent_node_id++;
+    static uint32_t parent_node_id = 0;
+    uint32_t parent_node_name_len = strlen("remodel_parent") + 10 + 1;
+    char* parent_node_name = malloc(parent_node_name_len);
+    snprintf(parent_node_name, parent_node_name_len, "remodel_parent%d", parent_node_id);
+    parent_node_id++;
 
-      static uint32_t child_node_id = 0;
-      uint32_t child_node_name_len = strlen("remodel_child") + 10 + 1;
-      char* child_node_name = malloc(child_node_name_len);
-      snprintf(child_node_name, parent_node_name_len, "remodel_child%d", child_node_id);
-      child_node_id++;
+    static uint32_t child_node_id = 0;
+    uint32_t child_node_name_len = strlen("remodel_child") + 10 + 1;
+    char* child_node_name = malloc(child_node_name_len);
+    snprintf(child_node_name, parent_node_name_len, "remodel_child%d", child_node_id);
+    child_node_id++;
 
-      array_t* parent_node = array_new();
-      array_append(parent_node, parent_node_name);
+    array_t* parent_node = array_new();
+    array_append(parent_node, parent_node_name);
 
-      array_t* child_node = array_new();
-      array_append(child_node, child_node_name);
+    array_t* child_node = array_new();
+    array_append(child_node, child_node_name);
 
-      parser_edges_t* parent_edges = parser_edges_new(parent_node, edges->parents, NULL);
-      parser_edges_t* child_edges = parser_edges_new(edges->children, child_node, NULL);
-      parser_edges_t* cmd_edge = parser_edges_new(child_node, parent_node, edges->cmd);
+    parser_edges_t* parent_edges = parser_edges_new(parent_node, edges->parents, NULL);
+    parser_edges_t* child_edges = parser_edges_new(edges->children, child_node, NULL);
+    parser_edges_t* cmd_edge = parser_edges_new(child_node, parent_node, edges->cmd);
 
-      remodel_graph_add_edges(graph, parent_edges);
-      remodel_graph_add_edges(graph, child_edges);
-      remodel_graph_add_edges(graph, cmd_edge);
+    remodel_graph_add_edges(graph, parent_edges);
+    remodel_graph_add_edges(graph, child_edges);
+    remodel_graph_add_edges(graph, cmd_edge);
   } else {
     // add the children and parent nodes if they don't already exist
     remodel_graph_add_nodes(graph, edges->children);
