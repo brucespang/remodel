@@ -1,0 +1,11 @@
+.DS_Store
+*\~
+\#*
+.\#*
+*.gcno
+*.gcda
+build/
+bin/remodel
+cov/
+coverage.info
+.remodel/
