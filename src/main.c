@@ -35,7 +35,8 @@ uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t*
     remodel_edge_t* edge = entry->value;
     assert(edge->from == node);
 
-    if (!edge->to->index) {
+    if (edge->to->index == 0) {
+      strongly_connected(stack, edge->to, index);
       node->low_index = min(node->low_index, edge->to->low_index);
     } else {
       node->low_index = min(node->low_index, edge->to->index);
