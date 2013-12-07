@@ -5,19 +5,17 @@
 int main() {
   remodel_graph_t* graph = remodel_load_file("test/test.remodel");
 
-  assert(ht_count(graph->nodes) == 4);
+  assert(ht_count(graph->nodes) == 6);
   assert(remodel_graph_contains_node(graph, "c1"));
   assert(remodel_graph_contains_node(graph, "c2"));
   assert(remodel_graph_contains_node(graph, "foo.c"));
   assert(remodel_graph_contains_node(graph, "bar.c"));
+  assert(remodel_graph_contains_node(graph, "remodel_parent0"));
+  assert(remodel_graph_contains_node(graph, "remodel_child0"));
 
-  printf("c1: %d\n", remodel_graph_get_node(graph, "c1")->num_parents);
-  assert(remodel_graph_get_node(graph, "c1")->num_parents == 2);
-  printf("c2: %d\n", remodel_graph_get_node(graph, "c2")->num_parents);
-  assert(remodel_graph_get_node(graph, "c2")->num_parents == 2);
-  printf("foo.c: %d\n", remodel_graph_get_node(graph, "foo.c")->num_parents);
+  assert(remodel_graph_get_node(graph, "c1")->num_parents == 1);
+  assert(remodel_graph_get_node(graph, "c2")->num_parents == 1);
   assert(remodel_graph_get_node(graph, "foo.c")->num_parents == 1);
-  printf("bar.c: %d\n", remodel_graph_get_node(graph, "bar.c")->num_parents);
   assert(remodel_graph_get_node(graph, "bar.c")->num_parents == 0);
 
   array_t* roots = remodel_roots(graph);

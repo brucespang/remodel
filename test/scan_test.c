@@ -15,8 +15,6 @@ void assert_parent(parser_edges_t* edges, uint32_t idx, const char* name) {
 }
 
 int main() {
-  remodel_init();
-
   parser_edges_t* edges = remodel_parse_line("DEFAULT <- main.c : \"test\"");
   assert(edges->children->len == 1);
   assert(edges->parents->len == 1);
