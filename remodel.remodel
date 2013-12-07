@@ -1,8 +1,17 @@
-DEFAULT <- bin/remodel
-bin/remodel <- src/main.c : "gcc -g -o remodel src/main.c src/remodel.c src/array.c src/stack.c"
+DEFAULT <- remodel1, remodel2 : "echo 2"
+remodel1, remodel2 <- src/remodel.c, src/main.c, src/array.c, src/file.c, src/ht.c, src/murmurhash.c, src/parse.c, src/scan.c : "echo 1"
 
-src/main.c <- src/remodel.c
-src/remodel.c <- include/remodel.h
-src/main.c, src/remodel.c <- src/array.c
 src/array.c <- include/array.h
-src/stack.c <- include/stack.h
+src/file.c <- include/file.h, include/remodel.h
+src/ht.c <- include/ht.h, include/murmurhash.h
+src/main.c <- include/array.h, include/remodel.h, include/stack.h
+src/murmurhash.c <- include/murmurhash.h
+src/parse.c <- include/array.h, include/remodel.h, include/queue.h
+src/remodel.c <- include/file.h, include/murmurhash.h, include/remodel.h
+src/scan.c <- include/array.h, include/remodel.h, include/stack.h
+test/array_test.c <- include/array.h
+test/ht_test.c <- include/ht.h
+test/queue_test.c <- include/queue.h
+test/remodel_test.c <- include/remodel.h
+test/scan_test.c <- include/remodel.h
+test/stack_test.c <- include/stack.h
