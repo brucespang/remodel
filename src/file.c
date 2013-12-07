@@ -39,7 +39,7 @@ char* read_file(FILE* file) {
 
   if (fread(str, fsize, 1, file) != 1 && ferror(file) != 0) {
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] fread: %s\n", strerror(errno));
+      fprintf(stderr, "[remodel] fread: %s\n", strerror(errno));
     }
     return NULL;
   }
@@ -103,7 +103,7 @@ bool file_changed(const char* path) {
   FILE* file = fopen(path, "r+");
   if (file == NULL) {
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] fopen(%s): %s\n", path, strerror(errno));
+      fprintf(stderr, "[remodel] fopen(%s): %s\n", path, strerror(errno));
     }
     return true;
   }
@@ -117,13 +117,13 @@ bool file_changed(const char* path) {
   FILE* cache_file = fopen(cache_path, "r");
   if (cache_file == NULL) {
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] fopen(%s): %s\n", cache_path, strerror(errno));
+      fprintf(stderr, "[remodel] fopen(%s): %s\n", cache_path, strerror(errno));
     }
     res = true;
   } else {
     old_md5 = read_file(cache_file);
     if(old_md5 == NULL) {
-      fprintf(stderr, "[REMODEL] fread(%s): %s\n", cache_path, strerror(errno));
+      fprintf(stderr, "[remodel] fread(%s): %s\n", cache_path, strerror(errno));
       res = true;
       goto exit;
     }
@@ -131,9 +131,7 @@ bool file_changed(const char* path) {
     res = strcmp(old_md5, current_md5) != 0;
 
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] md5(%s): %s\n", path, current_md5);
-      fprintf(stderr, "[REMODEL] md5(%s): %s\n", cache_path, old_md5);
-      fprintf(stderr, "[REMODEL] %s changed: %d\n", path, res);
+      fprintf(stderr, "[remodel] %s: md5=%s, cache=%s\n", path, current_md5, old_md5);
     }
   }
 

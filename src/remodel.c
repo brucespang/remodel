@@ -66,24 +66,61 @@ static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, con
     edge->to->num_parents++;
 
     ht_put(from->children, edge->to, sizeof(remodel_edge_t), edge);
+  } else {
+    fprintf(stderr, "[remodel] error: only one edge can exist from %s to %s.\n",
+            from->name, to->name);
+    exit(1);
   }
 }
 
 void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
-  remodel_graph_add_nodes(graph, edges->children);
-  remodel_graph_add_nodes(graph, edges->parents);
+  // if we have a command that maps from m parents to n children, the intent is not
+  // to execute the command m*n times, but execute it once when all parents have been executed
+  // and atomically produce all children.
+  // to do this, we replace multiple parents and multiple children with a node, so that
+  // we will execute the command at most once.
+  if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
+      static uint32_t parent_node_id = 0;
+      char* parent_node_name = malloc(strlen("remodel_parent") + 10 + 1);
+      sprintf(parent_node_name, "remodel_parent%d", parent_node_id);
+      parent_node_id++;
 
-  for (uint32_t i = 0; i < edges->parents->len; i++) {
-    char* parent_name = array_get(edges->parents, i);
-    remodel_node_t* parent = ht_get(graph->nodes, parent_name, strlen(parent_name));
-    assert(parent);
+      static uint32_t child_node_id = 0;
+      char* child_node_name = malloc(strlen("remodel_child") + 10 + 1);
+      sprintf(child_node_name, "remodel_child%d", child_node_id);
+      child_node_id++;
 
-    for (uint32_t i = 0; i < edges->children->len; i++) {
-      char* child_name = array_get(edges->children, i);
-      remodel_node_t* child = ht_get(graph->nodes, child_name, strlen(child_name));
-      assert(child);
+      array_t* parent_node = array_new();
+      array_append(parent_node, parent_node_name);
 
-      remodel_graph_add_edge(parent, child, edges->cmd);
+      array_t* child_node = array_new();
+      array_append(child_node, child_node_name);
+
+      parser_edges_t* parent_edges = parser_edges_new(parent_node, edges->parents, NULL);
+      parser_edges_t* child_edges = parser_edges_new(edges->children, child_node, NULL);
+      parser_edges_t* cmd_edge = parser_edges_new(child_node, parent_node, edges->cmd);
+
+      remodel_graph_add_edges(graph, parent_edges);
+      remodel_graph_add_edges(graph, child_edges);
+      remodel_graph_add_edges(graph, cmd_edge);
+  } else {
+    // add the children and parent nodes if they don't already exist
+    remodel_graph_add_nodes(graph, edges->children);
+    remodel_graph_add_nodes(graph, edges->parents);
+
+    // add edges from the parents to the children
+    for (uint32_t i = 0; i < edges->parents->len; i++) {
+      char* parent_name = array_get(edges->parents, i);
+      remodel_node_t* parent = ht_get(graph->nodes, parent_name, strlen(parent_name));
+      assert(parent);
+
+      for (uint32_t i = 0; i < edges->children->len; i++) {
+        char* child_name = array_get(edges->children, i);
+        remodel_node_t* child = ht_get(graph->nodes, child_name, strlen(child_name));
+        assert(child);
+
+        remodel_graph_add_edge(parent, child, edges->cmd);
+      }
     }
   }
 }
@@ -137,26 +174,47 @@ array_t* remodel_roots(remodel_graph_t* graph) {
 
 static void edge_execute(remodel_edge_t* edge) {
   if (options.debug) {
-    fprintf(stderr, "[REMODEL] executing %s -> %s\n", edge->from->name, edge->to->name);
+    fprintf(stderr, "[remodel] executing %s -> %s\n", edge->from->name, edge->to->name);
   }
 
+  // if the parent of this edge been modified, we want to regenerate the child
   if (file_changed(edge->from->name)) {
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] %s modified on disk\n", edge->from->name);
+      fprintf(stderr, "[remodel] %s modified on disk\n", edge->from->name);
+      fprintf(stderr, "[remodel] %s has modified parent (%s)\n",
+              edge->to->name, edge->from->name);
     }
     edge->from->modified = true;
+    // we want to update the child
+    edge->to->modified = true;
   }
 
-  if (edge->from->modified) {
+  // if the child of this edge has been modified, we want to regenerate it.
+  if (file_changed(edge->to->name)) {
     if (options.debug) {
-      fprintf(stderr, "[REMODEL] %s has modified parent (%s)\n",
-              edge->to->name, edge->from->name);
+      fprintf(stderr, "[remodel] %s modified on disk\n", edge->to->name);
+    }
+    edge->to->modified = true;
+  }
+
+  // if either the child or parent has been modified, we want to regenerate the child.
+  if (edge->to->modified) {
+    if (options.debug) {
+      fprintf(stderr, "[remodel] %s needs regeneration\n", edge->to->name);
     }
 
     if (edge->command) {
       fprintf(stderr, "%s\n", edge->command);
+      int status;
+      if ((status = system(edge->command)) != 0) {
+        if (status < 0) {
+          fprintf(stderr, "[remodel] error: system: %s\n", strerror(errno));
+        } else {
+          fprintf(stderr, "[remodel] command exited with non-zero status: %d\n", status);
+          exit(1);
+        }
+      }
     }
-    edge->to->modified = true;
   }
 }
 
@@ -168,6 +226,7 @@ static void* topo_sort_worker(void* arg) {
     assert(!edge->visited);
     edge->visited = true;
 
+    // we're guaranteed that there is exactly one edge for a child with a command to execute
     edge_execute(edge);
 
     remodel_node_t* child = edge->to;
