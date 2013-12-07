@@ -18,6 +18,7 @@ struct stack {
 struct stack* stack_new(uint32_t initial_size);
 void stack_free(struct stack* stack);
 bool stack_is_empty(struct stack* stack);
+bool stack_contains(struct stack* stack, void* obj);
 void* stack_pop(struct stack* stack);
 uint32_t stack_size(struct stack* stack);
 

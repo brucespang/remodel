@@ -30,6 +30,15 @@ bool stack_is_empty(struct stack* stack) {
   return stack_size(stack) == 0;
 }
 
+bool stack_contains(struct stack* stack, void* obj) {
+  for (uint32_t i = 0; i < stack->top; i++) {
+    if (stack->stack[i] == obj) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void* stack_pop(struct stack* stack) {
   if (stack_is_empty(stack)) {
     return NULL;

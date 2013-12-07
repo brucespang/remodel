@@ -38,7 +38,7 @@ uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t*
     if (edge->to->index == 0) {
       strongly_connected(stack, edge->to, index);
       node->low_index = min(node->low_index, edge->to->low_index);
-    } else {
+    } else if(stack_contains(stack, edge->to)) {
       node->low_index = min(node->low_index, edge->to->index);
     }
   }
