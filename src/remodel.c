@@ -195,7 +195,7 @@ static void edge_execute(remodel_edge_t* edge) {
   // if the parent of this edge been modified, we want to regenerate the child.
   // we only want to check nodes that we haven't inserted, but if the parents
   // of one of our parent nodes have been modified, we should update the child.
-  edge->to->modified |= edge->from->modified;
+  ck_pr_or_8(&edge->to->modified, edge->from->modified);
   if (is_internal_name(edge->from->name) && options.debug) {
     fprintf(stderr, "[remodel] %s(%d) -> %s(%d)\n",
             edge->from->name, edge->from->modified,

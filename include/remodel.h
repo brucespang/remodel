@@ -29,9 +29,9 @@ typedef struct {
   ht_t* children;
 
   // state for parallel topological sort
-  bool modified;
   uint32_t num_parents;
-  // we would like this to be a bool, but libck doesn't support CAS on bools
+  // we would like these to be bools, but libck doesn't support bools
+  uint8_t modified;
   uint8_t visited;
 
   // state for tarjan's algorithm

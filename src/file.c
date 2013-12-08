@@ -115,7 +115,7 @@ bool file_changed(const char* path) {
   snprintf(cache_path, cache_path_len, "%s/%s", REMODEL_DIR, path);
 
   mkdirp(cache_path, 0755);
-  FILE* cache_file = fopen(cache_path, "r");
+  FILE* cache_file = fopen(cache_path, "r+");
   if (cache_file == NULL) {
     if (options.debug) {
       fprintf(stderr, "[remodel] fopen(%s): %s\n", cache_path, strerror(errno));
@@ -138,27 +138,11 @@ bool file_changed(const char* path) {
 
   // try to open the cache file for writing, and write the current md5 sum back to the cache.
   // it is possible for multiple threads to try and check if a file has changed concurrently
-  // (e.g. bar.c <- foo.c, baz.c <- foo.c) to deal with this, we write the new md5 sum to a
-  // tmp file with the current thread's identifier and rename it to the original file name.
-  uint32_t tmp_cache_path_len = cache_path_len + 1 + 3 + 1 + 10;
-  tmp_cache_path = malloc(tmp_cache_path_len + 1);
-  void* tid = pthread_self();
-  snprintf(tmp_cache_path, tmp_cache_path_len, "%s.tmp.%p", cache_path, tid);
-  FILE* tmp_cache_file = fopen(tmp_cache_path, "w");
-  if (!tmp_cache_file) {
-    goto exit;
-  }
-
-  if (fwrite(current_md5, strlen(current_md5), 1, tmp_cache_file) == 0) {
+  // (e.g. bar.c <- foo.c, baz.c <- foo.c)
+  fseek(cache_file, 0, SEEK_SET);
+  if (fwrite(current_md5, strlen(current_md5), 1, cache_file) == 0) {
     fprintf(stderr, "error: fwrite: %s\n", strerror(errno));
   }
-
-  if (rename(tmp_cache_path, cache_path) != 0) {
-    fprintf(stderr, "error: rename(%s, %s): %s\n",
-            tmp_cache_path, cache_path, strerror(errno));
-  }
-
-  fclose(tmp_cache_file);
 
 exit:
   fclose(cache_file);
