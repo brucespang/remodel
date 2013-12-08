@@ -114,7 +114,6 @@ bool file_changed(const char* path) {
   } else {
     old_md5 = read_file(cache_file);
     res = strcmp(old_md5, current_md5) != 0;
-
   }
 
   // try to open the cache file for writing, and write the current md5 sum back to

@@ -14,6 +14,7 @@ typedef struct {
   ht_t* nodes;
   queue_t* queue;
   uint64_t num_visited;
+  uint64_t num_edges;
 } remodel_graph_t;
 
 typedef struct {
@@ -43,7 +44,7 @@ typedef struct {
   remodel_node_t* from;
   remodel_node_t* to;
   const char* command;
-  bool visited;
+  uint8_t visited;
 } remodel_edge_t;
 
 typedef struct {

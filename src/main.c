@@ -142,10 +142,7 @@ int main(int argc, char** argv) {
   //      containing the production would be executed, but that seems like more
   //      trouble than its worth, except in unusual systems with many
   //      unrelated components.
-  //   2. I've decided to allow multiple productions in a rule. This makes more
-  //      sense when thinking about them as "files produced" instead of
-  //      "names of actions." It allows a command to have multiple outputs
-  //      and still be executed correctly. In this situation, it's unclear
+  //   2. We allow multiple productions in a rule, and it's unclear
   //      what the correct behavior for a production is: is it when the LHS
   //      literally matches the supplied production, when the files on the LHS
   //      are the same as the files on the RHS, or when a file in the production

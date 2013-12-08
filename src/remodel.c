@@ -57,7 +57,8 @@ static void remodel_graph_add_nodes(remodel_graph_t* graph, array_t* nodes) {
   }
 }
 
-static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, const char* cmd) {
+static void remodel_graph_add_edge(remodel_graph_t* graph,
+                                   remodel_node_t* from, remodel_node_t* to, const char* cmd) {
   if (!ht_get(from->children, to->name, strlen(to->name))) {
     remodel_edge_t* edge = calloc(1, sizeof(remodel_edge_t));
     edge->from = from;
@@ -66,6 +67,7 @@ static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, con
     edge->to->num_parents++;
 
     ht_put(from->children, edge->to->name, strlen(to->name), edge);
+    graph->num_edges++;
   } else {
     fprintf(stderr, "[remodel] error: can't have two edges from %s to %s\n",
             from->name, to->name);
@@ -128,7 +130,7 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
                                        strlen(child_name));
         assert(child);
 
-        remodel_graph_add_edge(parent, child, edges->cmd);
+        remodel_graph_add_edge(graph, parent, child, edges->cmd);
       }
     }
   }
@@ -224,18 +226,20 @@ static void* topo_sort_worker(void* arg) {
 
   remodel_edge_t* edge;
   while ((edge = queue_dequeue(graph->queue)) != NULL) {
-    assert(!edge->visited);
-    edge->visited = true;
+    assert(ck_pr_cas_8(&edge->visited, false, true));
 
     // we're guaranteed that there is exactly one edge for a child with a
     // command to execute
     edge_execute(edge);
 
     remodel_node_t* child = edge->to;
-    // casting is safe because we're guaranteed that this won't go below zero, since we stop at 1
-    if (ck_pr_faa_int((int*)&child->num_parents, -1) == 1) {
+    // enqueue the child if there are no more parents to visit. this preserves
+    // the dependency order.
+    // casting is safe because we're guaranteed that this won't go below zero,
+    // since we stop at one.
+    int32_t unvisited_parents;
+    if ((unvisited_parents = ck_pr_faa_int((int*)&child->num_parents, -1)) == 1) {
       if (ck_pr_fas_8(&child->visited, 1) == 0) {
-        ck_pr_inc_64(&graph->num_visited);
         ht_entry_t* entry;
         ht_iterator_t iter = HT_ITERATOR_INITIALIZER;
         while (ht_next(child->children, &iter, &entry)) {
@@ -244,6 +248,9 @@ static void* topo_sort_worker(void* arg) {
         }
       }
     }
+
+    // update the number of visited nodes for the termination condition.
+    ck_pr_inc_64(&graph->num_visited);
   }
 
   return NULL;
@@ -252,7 +259,7 @@ static void* topo_sort_worker(void* arg) {
 void remodel_execute(remodel_graph_t* graph, uint32_t num_threads) {
   array_t* entry_nodes = remodel_roots(graph);
 
-  graph->num_visited = entry_nodes->len;
+  graph->num_visited = 0;
 
   for (uint32_t i = 0; i < entry_nodes->len; i++) {
     remodel_node_t* root = array_get(entry_nodes, i);
@@ -270,6 +277,7 @@ void remodel_execute(remodel_graph_t* graph, uint32_t num_threads) {
   }
 
   pthread_t* threads = calloc(num_threads, sizeof(pthread_t));
+  assert(graph->num_visited == 0);
   for (uint32_t i = 0; i < num_threads; i++) {
     // TODO: handle errors better
     if (pthread_create(&threads[i], NULL, &topo_sort_worker, graph) < 0) {
@@ -278,8 +286,9 @@ void remodel_execute(remodel_graph_t* graph, uint32_t num_threads) {
     }
   }
 
-  while (graph->num_visited != ht_count(graph->nodes)) {
+  while (graph->num_visited != graph->num_edges) {
   }
+  assert(queue_size(graph->queue) == 0);
 
   for (uint32_t i = 0; i < num_threads; i++) {
     if (pthread_cancel(threads[i]) < 0) {
