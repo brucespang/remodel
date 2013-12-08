@@ -62,11 +62,12 @@ char* md5sum(FILE* file) {
   return res;
 }
 
-// awful
-static void mkdirp(char* path, mode_t mode) {
+static void mkdirp(const char* target, mode_t mode) {
+  char* path = strdup(target);
+
   char* filename = strrchr(path, '/');
   if (filename == NULL) {
-    return;
+    goto exit;
   }
   filename[0] = '\0';
 
@@ -88,15 +89,14 @@ static void mkdirp(char* path, mode_t mode) {
     *p = v;
   }
 
-  filename[0] = '/';
+exit:
+  free(path);
 }
 
 bool file_changed(const char* path) {
   bool res;
-  char* old_md5 = NULL;
-  char* tmp_cache_path = NULL;
 
-  FILE* file = fopen(path, "r+");
+  FILE* file = fopen(path, "r");
   if (file == NULL) {
     return true;
   }
@@ -109,11 +109,12 @@ bool file_changed(const char* path) {
   mkdirp(cache_path, 0755);
   FILE* cache_file = fopen(cache_path, "r+");
   if (cache_file == NULL) {
-    cache_file = fopen(cache_path, "w+");
     res = true;
+    cache_file = fopen(cache_path, "w+");
   } else {
-    old_md5 = read_file(cache_file);
+    char* old_md5 = read_file(cache_file);
     res = strcmp(old_md5, current_md5) != 0;
+    free(old_md5);
   }
 
   // try to open the cache file for writing, and write the current md5 sum back to
@@ -126,10 +127,8 @@ bool file_changed(const char* path) {
 
   fclose(cache_file);
   fclose(file);
-  free(tmp_cache_path);
-  free(cache_path);
   free(current_md5);
-  free(old_md5);
+  free(cache_path);
 
   return res;
 }
