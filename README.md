@@ -8,7 +8,7 @@
 
 ## Building
 
-Remodel depends on [Concurrency Kit](http://concurrencykit.org/), [Flex](http://flex.sourceforge.net/), and [Bison](http://www.gnu.org/software/bison/). After installing the dependencies, run the following:
+Remodel depends on [Concurrency Kit](https://github.com/sbahra/ck), [Flex](http://flex.sourceforge.net/), and [Bison](http://www.gnu.org/software/bison/). After installing the dependencies, run the following:
 
     make
     ./bin/remodel /path/to/remodel/file
