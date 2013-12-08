@@ -29,11 +29,11 @@ fmix64(uint64_t k)
 }
 
 void
-MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *out)
+MurmurHash3_x64_128(const void *key, const size_t len, const
+                    uint32_t seed, void *out)
 {
 	const uint8_t * data = (const uint8_t*)key;
-	const int nblocks = len / 16;
-	int i;
+	const size_t nblocks = len / 16;
 
 	uint64_t h1 = seed;
 	uint64_t h2 = seed;
@@ -49,15 +49,15 @@ MurmurHash3_x64_128(const void *key, const int len, const uint32_t seed, void *o
 	/* body */
 	const uint64_t * blocks = (const uint64_t *)(data);
 
-	for (i = 0; i < nblocks; i++) {
-		uint64_t k1 = blocks[i*2+0];
-		uint64_t k2 = blocks[i*2+1];
+	for (size_t i = 0; i < nblocks; i++) {
+		uint64_t _k1 = blocks[i*2+0];
+		uint64_t _k2 = blocks[i*2+1];
 
-		k1 *= c1; k1  = rotl64(k1, 31); k1 *= c2; h1 ^= k1;
+		_k1 *= c1; _k1  = rotl64(_k1, 31); _k1 *= c2; h1 ^= _k1;
 
 		h1 = rotl64(h1, 27); h1 += h2; h1 = h1*5+0x52dce729;
 
-		k2 *= c2; k2  = rotl64(k2, 33); k2 *= c1; h2 ^= k2;
+		_k2 *= c2; _k2  = rotl64(_k2, 33); _k2 *= c1; h2 ^= _k2;
 
 		h2 = rotl64(h2, 31); h2 += h1; h2 = h2*5+0x38495ab5;
 	}

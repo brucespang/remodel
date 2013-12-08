@@ -6,7 +6,7 @@ include=include
 executable=remodel
 
 CC=clang
-CFLAGS += -I. -g -Wall -Wextra -Werror -Wno-unused-function --coverage
+CFLAGS += -I. -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align --coverage
 LDFLAGS += -lck -lcrypto -lssl -lpthread
 
 LEX    = flex
@@ -60,7 +60,7 @@ compile: clean-coverage $(build)/ $(bin)/$(executable)
 
 .PHONY: run
 run: compile
-	$(bin)/$(executable) -d remodel.remodel
+	$(bin)/$(executable) remodel.remodel
 
 .PHONY: check
 check:

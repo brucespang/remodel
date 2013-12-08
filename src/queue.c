@@ -21,7 +21,7 @@ void queue_free(queue_t* queue) {
   free(queue);
 }
 
-void* queue_dequeue_locked(queue_t* queue) {
+static void* queue_dequeue_locked(queue_t* queue) {
   if (queue->head == queue->tail) {
     return NULL;
   }
@@ -46,7 +46,7 @@ void* queue_dequeue(queue_t* queue) {
   return res;
 }
 
-bool queue_enqueue_locked(queue_t* queue, void* item) {
+static bool queue_enqueue_locked(queue_t* queue, void* item) {
   uint32_t next = (queue->tail + 1) % queue->max_size;
   if (next == queue->head) {
     return false;

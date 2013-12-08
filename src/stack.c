@@ -3,7 +3,7 @@
 
 #include "include/stack.h"
 
-struct stack* stack_new(uint32_t initial_size) {
+struct stack* stack_new(uint64_t initial_size) {
   struct stack* stack = calloc(1, sizeof(struct stack));
   assert(stack);
 
@@ -22,7 +22,7 @@ void stack_free(struct stack* stack) {
   free(stack);
 }
 
-uint32_t stack_size(struct stack* stack) {
+uint64_t stack_size(struct stack* stack) {
   return stack->size;
 }
 
@@ -31,7 +31,7 @@ bool stack_is_empty(struct stack* stack) {
 }
 
 bool stack_contains(struct stack* stack, void* obj) {
-  for (uint32_t i = 0; i < stack->top; i++) {
+  for (uint64_t i = 0; i < stack->top; i++) {
     if (stack->stack[i] == obj) {
       return true;
     }
@@ -51,7 +51,7 @@ void* stack_pop(struct stack* stack) {
   return res;
 }
 
-static void resize(struct stack* stack, uint32_t new_len) {
+static void resize(struct stack* stack, uint64_t new_len) {
   assert(new_len > stack->max_size);
 
   stack->stack = realloc(stack->stack, sizeof(void*)*new_len);

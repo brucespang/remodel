@@ -15,7 +15,7 @@ typedef struct {
   void** arr;
 } array_t;
 
-array_t* array_new();
+array_t* array_new(void);
 void array_set(array_t* arr, uint32_t idx, void* val);
 void array_append(array_t* arr, void* val);
 void* array_get(array_t* arr, uint32_t idx);

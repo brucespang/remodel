@@ -51,12 +51,12 @@ typedef struct {
   bool generate_graph;
 } remodel_options_t;
 
-extern parser_edges_t* edges;
+extern parser_edges_t* _parsed_edges;
 
 remodel_graph_t* remodel_load_file(char* path);
 array_t* remodel_roots(remodel_graph_t* graph);
 void remodel_execute(remodel_graph_t* graph, uint32_t num_threads);
-remodel_graph_t* remodel_graph_new();
+remodel_graph_t* remodel_graph_new(void);
 void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* node);
 parser_edges_t* parser_edges_new(array_t* children, array_t* parents, const char* command);
 parser_edges_t* remodel_parse_line(const char* line);

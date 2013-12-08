@@ -11,11 +11,6 @@
 #include "src/scan.c"
 #include "include/murmurhash.h"
 
-remodel_options_t options = {
-  .debug = false,
-  .generate_graph = false
-};
-
 remodel_graph_t* remodel_graph_new() {
   remodel_graph_t* graph = calloc(1, sizeof(remodel_graph_t));
   graph->nodes = ht_new(4);
@@ -32,7 +27,7 @@ parser_edges_t* parser_edges_new(array_t* children, array_t* parents, const char
   return edges;
 }
 
-remodel_node_t* remodel_node_new(const char* name) {
+static remodel_node_t* remodel_node_new(const char* name) {
   remodel_node_t* node = calloc(1, sizeof(remodel_node_t));
   node->name = name;
   node->children = ht_new(4);
@@ -52,7 +47,7 @@ bool remodel_graph_contains_node(remodel_graph_t* graph, const char* name) {
   return remodel_graph_get_node(graph, name) != NULL;
 }
 
-void remodel_graph_add_nodes(remodel_graph_t* graph, array_t* nodes) {
+static void remodel_graph_add_nodes(remodel_graph_t* graph, array_t* nodes) {
   for (uint32_t i = 0; i < nodes->len; i++) {
     char* name = array_get(nodes, i);
     if (ht_get(graph->nodes, name, strlen(name)) == NULL) {
@@ -71,10 +66,6 @@ static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, con
     edge->to->num_parents++;
 
     ht_put(from->children, edge->to, sizeof(remodel_edge_t), edge);
-  } else {
-    fprintf(stderr, "[remodel] error: only one edge can exist from %s to %s.\n",
-            from->name, to->name);
-    exit(1);
   }
 }
 
@@ -89,13 +80,13 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // we will execute the command at most once.
   if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
     static uint32_t parent_node_id = 0;
-    uint32_t parent_node_name_len = strlen(remodel_parent) + 10 + 1;
+    size_t parent_node_name_len = strlen(remodel_parent) + 10 + 1;
     char* parent_node_name = malloc(parent_node_name_len);
     snprintf(parent_node_name, parent_node_name_len, "%s%d", remodel_parent, parent_node_id);
     parent_node_id++;
 
     static uint32_t child_node_id = 0;
-    uint32_t child_node_name_len = strlen(remodel_child) + 10 + 1;
+    size_t child_node_name_len = strlen(remodel_child) + 10 + 1;
     char* child_node_name = malloc(child_node_name_len);
     snprintf(child_node_name, parent_node_name_len, "%s%d", remodel_child, child_node_id);
     child_node_id++;
@@ -124,8 +115,8 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
       remodel_node_t* parent = ht_get(graph->nodes, parent_name, strlen(parent_name));
       assert(parent);
 
-      for (uint32_t i = 0; i < edges->children->len; i++) {
-        char* child_name = array_get(edges->children, i);
+      for (uint32_t j = 0; i < edges->children->len; i++) {
+        char* child_name = array_get(edges->children, j);
         remodel_node_t* child = ht_get(graph->nodes, child_name, strlen(child_name));
         assert(child);
 
@@ -140,7 +131,7 @@ parser_edges_t* remodel_parse_line(const char* line) {
   YY_BUFFER_STATE buf = yy_scan_string(line);
   yyparse();
   yy_delete_buffer(buf);
-  return edges;
+  return _parsed_edges;
 }
 
 remodel_graph_t* remodel_load_file(char* path) {
@@ -154,7 +145,7 @@ remodel_graph_t* remodel_load_file(char* path) {
 
   char* line = NULL;
   size_t len;
-  int res;
+  ssize_t res;
   while ((res = getline(&line, &len, f)) != -1) {
     if (strlen(line) > 1) {
       remodel_graph_add_edges(graph, remodel_parse_line(line));
@@ -188,53 +179,33 @@ static bool is_internal_name(const char* name) {
 }
 
 static void edge_execute(remodel_edge_t* edge) {
-  if (options.debug) {
-    fprintf(stderr, "[remodel] executing %s -> %s\n", edge->from->name, edge->to->name);
-  }
-
   // if the parent of this edge been modified, we want to regenerate the child.
   // we only want to check nodes that we haven't inserted, but if the parents
   // of one of our parent nodes have been modified, we should update the child.
-  ck_pr_or_8(&edge->to->modified, edge->from->modified);
-  if (is_internal_name(edge->from->name) && options.debug) {
-    fprintf(stderr, "[remodel] %s(%d) -> %s(%d)\n",
-            edge->from->name, edge->from->modified,
-            edge->to->name, edge->to->modified);
-  } else if (file_changed(edge->from->name)) {
-    if (options.debug) {
-      fprintf(stderr, "[remodel] %s modified on disk\n", edge->from->name);
-      fprintf(stderr, "[remodel] %s has modified parent (%s)\n",
-              edge->to->name, edge->from->name);
-    }
-    edge->from->modified = true;
+  ck_pr_xor_8(&edge->to->modified, edge->from->modified);
+  if (!is_internal_name(edge->from->name) && file_changed(edge->from->name)) {
     // we want to update the child
+    edge->from->modified = true;
     edge->to->modified = true;
   }
 
   // if the child of this edge has been modified, we want to regenerate it.
   if (!is_internal_name(edge->to->name) && file_changed(edge->to->name)) {
-    if (options.debug) {
-      fprintf(stderr, "[remodel] %s modified on disk\n", edge->to->name);
-    }
     edge->to->modified = true;
   }
 
-  // if either the child or parent has been modified, we want to regenerate the child.
-  if (edge->to->modified) {
-    if (options.debug) {
-      fprintf(stderr, "[remodel] %s needs regeneration\n", edge->to->name);
-    }
-
-    if (edge->command) {
-      fprintf(stderr, "%s\n", edge->command);
-      int status;
-      if ((status = system(edge->command)) != 0) {
-        if (status < 0) {
-          fprintf(stderr, "[remodel] error: system: %s\n", strerror(errno));
-        } else {
-          fprintf(stderr, "[remodel] command exited with non-zero status: %d\n", status);
-          exit(1);
-        }
+  // if either the child or parent has been modified, we want to
+  // regenerate the child.
+  if (edge->to->modified && edge->command) {
+    fprintf(stderr, "%s\n", edge->command);
+    int status;
+    if ((status = system(edge->command)) != 0) {
+      if (status < 0) {
+        fprintf(stderr, "[remodel] error: system: %s\n", strerror(errno));
+      } else {
+        fprintf(stderr, "[remodel] command exited with non-zero status: %d\n",
+                status);
+        exit(1);
       }
     }
   }
@@ -248,18 +219,20 @@ static void* topo_sort_worker(void* arg) {
     assert(!edge->visited);
     edge->visited = true;
 
-    // we're guaranteed that there is exactly one edge for a child with a command to execute
+    // we're guaranteed that there is exactly one edge for a child with a
+    // command to execute
     edge_execute(edge);
 
     remodel_node_t* child = edge->to;
-    if (ck_pr_faa_32(&child->num_parents, -1) == 1) {
+    // casting is safe because we're guaranteed that this won't go below zero, since we stop at 1
+    if (ck_pr_faa_int((int*)&child->num_parents, -1) == 1) {
       if (ck_pr_fas_8(&child->visited, 1) == 0) {
         ck_pr_inc_64(&graph->num_visited);
         ht_entry_t* entry;
         ht_iterator_t iter = HT_ITERATOR_INITIALIZER;
         while (ht_next(child->children, &iter, &entry)) {
-          remodel_edge_t* edge = entry->value;
-          queue_enqueue(graph->queue, edge);
+          remodel_edge_t* e = entry->value;
+          queue_enqueue(graph->queue, e);
         }
       }
     }
@@ -288,7 +261,7 @@ void remodel_execute(remodel_graph_t* graph, uint32_t num_threads) {
     return;
   }
 
-  pthread_t threads[num_threads];
+  pthread_t* threads = calloc(num_threads, sizeof(pthread_t));
   for (uint32_t i = 0; i < num_threads; i++) {
     // TODO: handle errors better
     if (pthread_create(&threads[i], NULL, &topo_sort_worker, graph) < 0) {
@@ -312,5 +285,6 @@ void remodel_execute(remodel_graph_t* graph, uint32_t num_threads) {
   // seeing the threads wait for a mutex in pthread_exit.
 
 exit:
+  free(threads);
   array_free(entry_nodes);
 }

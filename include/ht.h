@@ -35,7 +35,7 @@ ht_entry_t* ht_remove_entry(ht_t* ht, const void* key, size_t key_len);
 void ht_iterator_init(ht_iterator_t* it);
 bool ht_next(ht_t* ht, ht_iterator_t* it, ht_entry_t** entry);
 void ht_free(ht_t* ht);
-uint32_t ht_count(ht_t* ht);
+uint64_t ht_count(ht_t* ht);
 void ht_ref_add(ht_t* ht);
 void ht_ref_del(ht_t* ht);
 

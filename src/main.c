@@ -9,6 +9,9 @@
 #include "include/stack.h"
 #include "include/array.h"
 
+#define USAGE "Usage %s [-hv] [/path/to/remodel/file]\n"
+static const char* version = "0.0.1";
+
 extern remodel_options_t options;
 
 static inline uint32_t min(uint32_t x, uint32_t y) {
@@ -21,11 +24,8 @@ static inline uint32_t min(uint32_t x, uint32_t y) {
 
 #define DEFAULT_NUM_THREADS 8
 
-static const char* version = "0.0.1";
-static const char* usage = "Usage %s [-hv] [/path/to/remodel/file]\n";
-
 // Tarjan's Algorithm from wikipedia
-uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t* index) {
+static uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t* index) {
   node->index = *index;
   node->low_index = *index;
   (*index)++;
@@ -58,8 +58,8 @@ uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t*
       fprintf(stderr, "error: dependency graph contains cycle:\n");
       fprintf(stderr, "  [");
       for (uint32_t i = 0; i < component->len; i++) {
-        remodel_node_t* node = array_get(component, i);
-        fprintf(stderr, "%s", node->name);
+        remodel_node_t* n = array_get(component, i);
+        fprintf(stderr, "%s", n->name);
         if (i != component->len - 1) {
           fprintf(stderr, ", ");
         }
@@ -77,7 +77,7 @@ uint32_t strongly_connected(struct stack* stack, remodel_node_t* node, uint32_t*
   }
 }
 
-void validate_detect_cycles(remodel_graph_t* graph) {
+static void validate_detect_cycles(remodel_graph_t* graph) {
   struct stack* stack = stack_new(ht_count(graph->nodes));
   uint32_t index = 1;
   bool has_cycle = false;
@@ -99,7 +99,7 @@ void validate_detect_cycles(remodel_graph_t* graph) {
   stack_free(stack);
 }
 
-void validate_graph(remodel_graph_t* graph) {
+static void validate_graph(remodel_graph_t* graph) {
   // a valid graph has no cycles. if it has no cycles, it's also guaranteed to
   // have an entry point (a node with no incoming edges).
   validate_detect_cycles(graph);
@@ -107,33 +107,27 @@ void validate_graph(remodel_graph_t* graph) {
 
 int main(int argc, char** argv) {
   char* remodel_file;
-
   uint32_t num_threads = DEFAULT_NUM_THREADS;
+  bool generate_graph = false;
 
-  char c;
-  while ((c = getopt(argc, argv, "h:v:p:gd")) != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "h:v:p:g")) != -1) {
     switch (c) {
     case 'h':
-      fprintf(stderr, usage, argv[0]);
+      fprintf(stderr, USAGE, argv[0]);
       exit(0);
-      break;
     case 'v':
       fprintf(stderr, "Remodel: %s\n", version);
       break;
     case 'p':
-      num_threads = atoi(optarg);
-      break;
-    case 'd':
-      fprintf(stderr, "[REMODEL] debug mode enabled\n");
-      options.debug = true;
+      num_threads = (uint32_t)atoi(optarg);
       break;
     case 'g':
-      options.generate_graph = true;
+      generate_graph = true;
       break;
     default:
-      fprintf(stderr, usage, argv[0]);
+      fprintf(stderr, USAGE, argv[0]);
       exit(1);
-      break;
     }
   }
 
@@ -146,7 +140,7 @@ int main(int argc, char** argv) {
 
   remodel_graph_t* graph = remodel_load_file(remodel_file);
   validate_graph(graph);
-  if (options.generate_graph) {
+  if (generate_graph) {
     printf("digraph g {\n");
     ht_entry_t* entry;
     ht_iterator_t iter = HT_ITERATOR_INITIALIZER;

@@ -9,7 +9,7 @@
 
 #define SEED 0
 
-void* ht_malloc(size_t r) {
+static void* ht_malloc(size_t r) {
   return malloc(r);
 }
 
@@ -20,7 +20,7 @@ static void* ht_realloc(void *r, size_t a, size_t b, bool d) {
 	return realloc(r, b);
 }
 
-void ht_mfree(void *p, size_t b, bool r) {
+static void ht_mfree(void *p, size_t b, bool r) {
   (void)b;
   (void)r;
 
@@ -33,16 +33,16 @@ static struct ck_malloc ck_malloc = {
   .free = ht_mfree
 };
 
-bool ht_compare(const void* x, const void* y) {
+static bool ht_compare(const void* x, const void* y) {
   const ht_entry_t* a = x;
   const ht_entry_t* b = y;
   return a->key_len == b->key_len && memcmp(a->key, b->key, a->key_len) == 0;
 }
 
-unsigned long ht_hash(const void* e, unsigned long seed) {
+static unsigned long ht_hash(const void* e, unsigned long seed) {
   const ht_entry_t* entry = e;
-  uint64_t h[2];
-  MurmurHash3_x64_128(entry->key, entry->key_len, seed, h);
+  unsigned long h[2];
+  MurmurHash3_x64_128(entry->key, entry->key_len, (uint32_t)seed, h);
   return h[0];
 }
 
@@ -155,6 +155,6 @@ bool ht_next(ht_t* ht, ht_iterator_t* iter, ht_entry_t** entry) {
   return ck_hs_next(&ht->map, iter, (void**)entry);
 }
 
-uint32_t ht_count(ht_t* ht) {
+uint64_t ht_count(ht_t* ht) {
   return ck_hs_count(&ht->map);
 }
