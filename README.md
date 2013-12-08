@@ -25,8 +25,8 @@ Code coverage can be checked with
 
 There are also a few example remodel files that can be run:
 
-    - remodel.remodel - Encodes the dependency graph of the remodel source. It does not build remodel, because there would be too much repetition (since remodel has no variables or pattern matching). It does run two commands: one that echos 1 to remodel1 and 2 to remodel2, and one that just echos 2. Each should only be run once.
-    - cycle.remodel - Contains a cycle, useful for checking the cycle detector.
+- `remodel.remodel` - Encodes the dependency graph of the remodel source. It does not build remodel, because there would be too much repetition (since remodel has no variables or pattern matching). It does run two commands: one that echos 1 to remodel1 and 2 to remodel2, and one that just echos 2. Each should only be run once.
+- `cycle.remodel` - Contains a cycle, useful for checking the cycle detector.
 
 ## Grammar
 
