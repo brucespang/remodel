@@ -11,3 +11,8 @@ coverage.info
 .remodel/
 remodel1
 remodel2
+report.aux
+report.bbl
+report.blg
+report.log
+report.out

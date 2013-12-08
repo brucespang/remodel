@@ -78,3 +78,8 @@ coverage: test
 
 .PHONY: cov
 cov: coverage
+
+.PHONY: report
+report: report.tex report.bib
+	bibtex report
+	pdflatex report

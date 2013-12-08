@@ -1,0 +1,55 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{mathtools}
+\usepackage{cite}
+\usepackage[ruled,vlined]{algorithm2e}
+\renewcommand{\arraystretch}{2}
+
+\begin{document}
+
+\title{Project 2: Remodel}
+\author{Bruce Spang}
+\maketitle
+
+\section{Abstract}
+
+Remodel is a re-implentation of make \cite{make} as per \cite{assignment}. It executes dependencies in parallel, when possible.
+
+See README.md for details on building, testing, and running remodel.
+
+\section{Building the Graph}
+
+We parse the input file one line at a time
+
+Nodes in the dependency graph correspond to files or logical groups (e.g. compile), edges correspond to dependencies, edge labels correspond to a command to execute when traversing that edge.
+
+We build a graph by connecting all parents to all children, and label the edge with the command
+
+To avoid running a command with $m$ parents and $n$ dependencies $mn$ times, we add two nodes: a parent command node and a child command node. When a line has a command specified and has more than one parent or child, we add a node with the parents as dependencies, a node with the children as targets, and then an edge between the two new nodes labeled with the command.
+
+We do other reasonable checks, like enforcing that there can only at most one edge between two nodes, and that there are no cycles.
+
+\section{Executing the Graph}
+
+To actually execute the commands, we do a parallel topological sort based on \cite{topo}. We enqueue each edge into a thread-safe queue, and repeatedly dequeue an edge, execute it, mark it as visited, and enqueue all the edges of its child if the child has no more parents to visit. We use concurrency kit here for its fetch-and-set and fetch-and-add primitives.
+
+When executing an edge, we check if the parents's md5 sum and child's md5 sum matches a cached md5 sum. If it does not or if the parent is marked for execution, we mark the edge and its child for execution. If an edge is marked for execution and is labeled with a command, we execute the command.
+
+\section{Notes}
+
+We load the dependency graph specified in the arguments. We do not take a target to execute for a few reasons:
+\begin{enumerate}
+\item We cannot guarantee anything about what will be executed. We still need to execute children of the target, and we may need to execute parents of the target (if they've been modified), and cousins of the target (if their parents were modified). We could guarantee that only the component of the graph containing the production would be executed, but that seems like more trouble than its worth.
+\item Since we allow more than one production per rule, it's unclear what the correct behavior when executing a target is: only execute edges that string-match the target, only execute edges that have the same children as the target, execute all edges whose intersection with the target is non-empty, all edges who are a subset of the target, etc...
+\item When building small software projects, developers should not be allowed to run part of a a build. Running part of a build usually means that tests are not run (which is bad), or that the tests are insufficient (which is also bad). We do not want to encourage this behavior.
+\end{enumerate}
+
+\raggedright
+\bibliography{report}{}
+\nocite{*}
+\bibliographystyle{plain}
+
+\end{document}
