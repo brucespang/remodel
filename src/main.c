@@ -131,6 +131,27 @@ int main(int argc, char** argv) {
     }
   }
 
+  // The project suggests that we take a production instead of a remodel file here.
+  // That doesn't make sense in this implementation for a few reasons:
+  //   1. When executing the production correctly, the only thing we can guarantee
+  //      is that we will execute the production. We cannot guarantee that the
+  //      production will be the only thing executed (if it has children who
+  //      need rebuilding) or that a non-descendent won't be executed (if it a
+  //      parent of the production was modified, or a cousin of the production,
+  //      etc...). We probably could guarantee that only the component of the graph
+  //      containing the production would be executed, but that seems like more
+  //      trouble than its worth, except in unusual systems with many
+  //      unrelated components.
+  //   2. I've decided to allow multiple productions in a rule. This makes more
+  //      sense when thinking about them as "files produced" instead of
+  //      "names of actions." It allows a command to have multiple outputs
+  //      and still be executed correctly. In this situation, it's unclear
+  //      what the correct behavior for a production is: is it when the LHS
+  //      literally matches the supplied production, when the files on the LHS
+  //      are the same as the files on the RHS, or when a file in the production
+  //      is contained in the LHS? What about when multiple productions
+  //      are supplied?
+  // Also, it was useful for testing to be able to supply different remodel files.
   if (optind < argc) {
     remodel_file = argv[optind];
     optind++;
