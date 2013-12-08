@@ -9,7 +9,7 @@
 #include "include/stack.h"
 #include "include/array.h"
 
-#define USAGE "Usage %s [-hv] [/path/to/remodel/file]\n"
+#define USAGE "Usage %s [-hvg] [/path/to/remodel/file]\n"
 static const char* version = "0.0.1";
 
 extern remodel_options_t options;
