@@ -40,9 +40,11 @@ static bool ht_compare(const void* x, const void* y) {
 }
 
 static unsigned long ht_hash(const void* e, unsigned long seed) {
+  (void) seed;
+
   const ht_entry_t* entry = e;
-  unsigned long h[2];
-  MurmurHash3_x64_128(entry->key, entry->key_len, (uint32_t)seed, h);
+  uint64_t h[2];
+  MurmurHash3_x64_128(entry->key, (int)entry->key_len, SEED, h);
   return h[0];
 }
 

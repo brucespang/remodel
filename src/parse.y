@@ -37,8 +37,8 @@ files : TFILENAME                       { $$ = array_new(); array_append($$, $1)
       | TFILENAME TCOMMA files          { $$ = $3; array_append($$, $1); }
       ;
 
-expr  : files TARROW files              { _parsed_edges = parser_edges_new($1, $3, NULL); $$ = _parsed_edges; }
-      | files TARROW files TCOLON TSTR  { _parsed_edges = parser_edges_new($1, $3, $5); $$ = _parsed_edges; }
+expr  : files TARROW files              { _parsed_edges = parser_edges_new($3, $1, NULL); $$ = _parsed_edges; }
+      | files TARROW files TCOLON TSTR  { _parsed_edges = parser_edges_new($3, $1, $5); $$ = _parsed_edges; }
       ;
 
 %%

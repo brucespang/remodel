@@ -22,7 +22,7 @@ static void basic_stack() {
   stack_free(stack);
 }
 
-void pop_empty_stack() {
+static void pop_empty_stack() {
   struct stack* stack = stack_new(4);
   assert(stack_pop(stack) == NULL);
 

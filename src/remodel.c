@@ -19,7 +19,7 @@ remodel_graph_t* remodel_graph_new() {
   return graph;
 }
 
-parser_edges_t* parser_edges_new(array_t* children, array_t* parents, const char* cmd) {
+parser_edges_t* parser_edges_new(array_t* parents, array_t* children, const char* cmd) {
   parser_edges_t* edges = calloc(1, sizeof(parser_edges_t));
   edges->cmd = cmd;
   edges->children = children;
@@ -58,48 +58,54 @@ static void remodel_graph_add_nodes(remodel_graph_t* graph, array_t* nodes) {
 }
 
 static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, const char* cmd) {
-  if (!ht_get(from->children, to, sizeof(remodel_node_t))) {
+  if (!ht_get(from->children, to->name, strlen(to->name))) {
     remodel_edge_t* edge = calloc(1, sizeof(remodel_edge_t));
     edge->from = from;
     edge->to = to;
     edge->command = cmd;
     edge->to->num_parents++;
 
-    ht_put(from->children, edge->to, sizeof(remodel_edge_t), edge);
+    ht_put(from->children, edge->to->name, strlen(to->name), edge);
+  } else {
+    fprintf(stderr, "[remodel] error: can't have two edges from %s to %s\n",
+            from->name, to->name);
+    exit(1);
   }
 }
 
 static const char* remodel_parent = "_remodel_parent";
 static const char* remodel_child = "_remodel_child";
 
+static array_t* generate_edge_node(const char* name) {
+  static uint32_t id = 0;
+  size_t node_name_len = strlen(name) + 10 + 1;
+  char* node_name = malloc(node_name_len);
+  snprintf(node_name, node_name_len, "%s%d", name, id);
+  id++;
+
+  array_t* node = array_new();
+  array_append(node, node_name);
+
+  return node;
+}
+
 void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // if we have a command that maps from m parents to n children, the intent is not
-  // to execute the command m*n times, but execute it once when all parents have been executed
-  // and atomically produce all children.
-  // to do this, we replace multiple parents and multiple children with a node, so that
-  // we will execute the command at most once.
+  // to execute the command m*n times, but execute it once when all parents have
+  // been executed and atomically produce all children. to do this, we replace
+  // multiple parents and multiple children with a node, so that we will execute
+  // the command at most once.
   if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
-    static uint32_t parent_node_id = 0;
-    size_t parent_node_name_len = strlen(remodel_parent) + 10 + 1;
-    char* parent_node_name = malloc(parent_node_name_len);
-    snprintf(parent_node_name, parent_node_name_len, "%s%d", remodel_parent, parent_node_id);
-    parent_node_id++;
+    array_t* parent_node = generate_edge_node(remodel_parent);
+    array_t* child_node = generate_edge_node(remodel_child);
+    assert(strcmp(array_get(parent_node, 0), array_get(child_node, 0)) != 0);
 
-    static uint32_t child_node_id = 0;
-    size_t child_node_name_len = strlen(remodel_child) + 10 + 1;
-    char* child_node_name = malloc(child_node_name_len);
-    snprintf(child_node_name, parent_node_name_len, "%s%d", remodel_child, child_node_id);
-    child_node_id++;
-
-    array_t* parent_node = array_new();
-    array_append(parent_node, parent_node_name);
-
-    array_t* child_node = array_new();
-    array_append(child_node, child_node_name);
-
-    parser_edges_t* parent_edges = parser_edges_new(parent_node, edges->parents, NULL);
-    parser_edges_t* child_edges = parser_edges_new(edges->children, child_node, NULL);
-    parser_edges_t* cmd_edge = parser_edges_new(child_node, parent_node, edges->cmd);
+    parser_edges_t* parent_edges = parser_edges_new(edges->parents, parent_node,
+                                                    NULL);
+    parser_edges_t* child_edges = parser_edges_new(child_node, edges->children,
+                                                   NULL);
+    parser_edges_t* cmd_edge = parser_edges_new(parent_node, child_node,
+                                                edges->cmd);
 
     remodel_graph_add_edges(graph, parent_edges);
     remodel_graph_add_edges(graph, child_edges);
@@ -112,12 +118,14 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
     // add edges from the parents to the children
     for (uint32_t i = 0; i < edges->parents->len; i++) {
       char* parent_name = array_get(edges->parents, i);
-      remodel_node_t* parent = ht_get(graph->nodes, parent_name, strlen(parent_name));
+      remodel_node_t* parent = ht_get(graph->nodes, parent_name,
+                                      strlen(parent_name));
       assert(parent);
 
-      for (uint32_t j = 0; i < edges->children->len; i++) {
+      for (uint32_t j = 0; j < edges->children->len; j++) {
         char* child_name = array_get(edges->children, j);
-        remodel_node_t* child = ht_get(graph->nodes, child_name, strlen(child_name));
+        remodel_node_t* child = ht_get(graph->nodes, child_name,
+                                       strlen(child_name));
         assert(child);
 
         remodel_graph_add_edge(parent, child, edges->cmd);

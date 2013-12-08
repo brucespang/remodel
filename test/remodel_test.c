@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "include/remodel.h"
 
@@ -10,8 +11,8 @@ int main() {
   assert(remodel_graph_contains_node(graph, "c2"));
   assert(remodel_graph_contains_node(graph, "foo.c"));
   assert(remodel_graph_contains_node(graph, "bar.c"));
-  assert(remodel_graph_contains_node(graph, "remodel_parent0"));
-  assert(remodel_graph_contains_node(graph, "remodel_child0"));
+  assert(remodel_graph_contains_node(graph, "_remodel_parent0"));
+  assert(remodel_graph_contains_node(graph, "_remodel_child1"));
 
   assert(remodel_graph_get_node(graph, "c1")->num_parents == 1);
   assert(remodel_graph_get_node(graph, "c2")->num_parents == 1);

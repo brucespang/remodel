@@ -4,12 +4,12 @@
 
 #include "include/remodel.h"
 
-void assert_child(parser_edges_t* edges, uint32_t idx, const char* name) {
+static void assert_child(parser_edges_t* edges, uint32_t idx, const char* name) {
   const char* obs = array_get(edges->children, idx);
   assert(strcmp(obs, name) == 0);
 }
 
-void assert_parent(parser_edges_t* edges, uint32_t idx, const char* name) {
+static void assert_parent(parser_edges_t* edges, uint32_t idx, const char* name) {
   const char* obs = array_get(edges->parents, idx);
   assert(strcmp(obs, name) == 0);
 }

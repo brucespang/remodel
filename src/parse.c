@@ -1338,12 +1338,12 @@ yyreduce:
 
   case 4:
 #line 40 "src/parse.y"
-    { _parsed_edges = parser_edges_new((yyvsp[(1) - (3)].files), (yyvsp[(3) - (3)].files), NULL); (yyval.edges) = _parsed_edges; }
+    { _parsed_edges = parser_edges_new((yyvsp[(3) - (3)].files), (yyvsp[(1) - (3)].files), NULL); (yyval.edges) = _parsed_edges; }
     break;
 
   case 5:
 #line 41 "src/parse.y"
-    { _parsed_edges = parser_edges_new((yyvsp[(1) - (5)].files), (yyvsp[(3) - (5)].files), (yyvsp[(5) - (5)].str)); (yyval.edges) = _parsed_edges; }
+    { _parsed_edges = parser_edges_new((yyvsp[(3) - (5)].files), (yyvsp[(1) - (5)].files), (yyvsp[(5) - (5)].str)); (yyval.edges) = _parsed_edges; }
     break;
 
 
