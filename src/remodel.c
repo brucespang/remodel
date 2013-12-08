@@ -190,9 +190,10 @@ static bool is_internal_name(const char* name) {
 
 static void edge_execute(remodel_edge_t* edge) {
   // if the parent of this edge been modified, we want to regenerate the child.
+  ck_pr_or_8(&edge->to->modified, edge->from->modified);
+
   // we only want to check nodes that we haven't inserted, but if the parents
   // of one of our parent nodes have been modified, we should update the child.
-  ck_pr_xor_8(&edge->to->modified, edge->from->modified);
   if (!is_internal_name(edge->from->name) && file_changed(edge->from->name)) {
     // we want to update the child
     edge->from->modified = true;
