@@ -24,13 +24,13 @@ See README.md for details on building, testing, and running remodel.
 
 We parse the input file one line at a time
 
-Nodes in the dependency graph correspond to files or logical groups (e.g. compile), edges correspond to dependencies, edge labels correspond to a command to execute when traversing that edge.
+Nodes in the dependency graph correspond to files (e.g. foo.c) or logical groups (e.g. DEFAULT, compile), edges correspond to dependencies, edge labels correspond to a command to execute when traversing that edge.
 
-We build a graph by connecting all parents to all children, and label the edge with the command
+Each line contains a list of parents, children, and an optional edge label. To build the graph, we add the parent and nodes and then add a labeled edge between each parent and child pair.
 
-To avoid running a command with $m$ parents and $n$ dependencies $mn$ times, we add two nodes: a parent command node and a child command node. When a line has a command specified and has more than one parent or child, we add a node with the parents as dependencies, a node with the children as targets, and then an edge between the two new nodes labeled with the command.
+To avoid running a command with $m$ parents and $n$ children $mn$ times, we add two nodes: a parent command node and a child command node. When a line has a command specified and has more than one parent or child, we add a node with the parents as dependencies, a node with the children as targets, and an edge between the two new nodes labeled with the command. This ensures that the command is executed once, and that all parents are executed before the command.
 
-We do other reasonable checks, like enforcing that there can only at most one edge between two nodes, and that there are no cycles.
+We do other graph validation, like enforcing that there can only at most one edge between two nodes, and that there are no cycles.
 
 \section{Executing the Graph}
 
@@ -42,10 +42,21 @@ When executing an edge, we check if the parents's md5 sum and child's md5 sum ma
 
 We load the dependency graph specified in the arguments. We do not take a target to execute for a few reasons:
 \begin{enumerate}
-\item We cannot guarantee anything about what will be executed. We still need to execute children of the target, and we may need to execute parents of the target (if they've been modified), and cousins of the target (if their parents were modified). We could guarantee that only the component of the graph containing the production would be executed, but that seems like more trouble than its worth.
+\item We cannot make useful guarantees about what will be executed. We still need to execute children of the target, and we may need to execute parents of the target (if they've been modified), and cousins of the target (if their parents were modified). We could guarantee that only the component of the graph containing the production would be executed, but that seems like more trouble than its worth.
 \item Since we allow more than one production per rule, it's unclear what the correct behavior when executing a target is: only execute edges that string-match the target, only execute edges that have the same children as the target, execute all edges whose intersection with the target is non-empty, all edges who are a subset of the target, etc...
 \item When building small software projects, developers should not be allowed to run part of a a build. Running part of a build usually means that tests are not run (which is bad), or that the tests are insufficient (which is also bad). We do not want to encourage this behavior.
 \end{enumerate}
+
+\section{Code Structure}
+
+\begin{itemize}
+\item \texttt{src/main.c} contains the CLI, and checks whether the graph has cycles.
+\item \texttt{src/file.c} checks whether a file's md5 sum has changed from the cached version
+\item \texttt{src/remodel.c} builds the dependency graph (beginning in \texttt{remodel\_load\_file()}) and executes it executes it (beginning in \texttt{remodel\_execute()})
+\item \texttt{src/parse.y, src/scan.l} contain the lexer and parser specification
+\item \texttt{include/} contains headers.
+\item \texttt{test/} contains tests.
+\end{itemize}
 
 \raggedright
 \bibliography{report}{}
