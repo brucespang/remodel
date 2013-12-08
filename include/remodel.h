@@ -51,11 +51,6 @@ typedef struct {
   bool generate_graph;
 } remodel_options_t;
 
-static remodel_options_t options = {
-  .debug = false,
-  .generate_graph = false
-};
-
 extern parser_edges_t* edges;
 
 remodel_graph_t* remodel_load_file(char* path);

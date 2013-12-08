@@ -60,7 +60,7 @@ compile: clean-coverage $(build)/ $(bin)/$(executable)
 
 .PHONY: run
 run: compile
-	$(bin)/$(executable) remodel.remodel
+	$(bin)/$(executable) -d remodel.remodel
 
 .PHONY: check
 check:

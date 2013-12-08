@@ -11,6 +11,11 @@
 #include "src/scan.c"
 #include "include/murmurhash.h"
 
+remodel_options_t options = {
+  .debug = false,
+  .generate_graph = false
+};
+
 remodel_graph_t* remodel_graph_new() {
   remodel_graph_t* graph = calloc(1, sizeof(remodel_graph_t));
   graph->nodes = ht_new(4);
@@ -73,6 +78,9 @@ static void remodel_graph_add_edge(remodel_node_t* from, remodel_node_t* to, con
   }
 }
 
+static const char* remodel_parent = "_remodel_parent";
+static const char* remodel_child = "_remodel_child";
+
 void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // if we have a command that maps from m parents to n children, the intent is not
   // to execute the command m*n times, but execute it once when all parents have been executed
@@ -81,15 +89,15 @@ void remodel_graph_add_edges(remodel_graph_t* graph, parser_edges_t* edges) {
   // we will execute the command at most once.
   if (edges->cmd && (edges->children->len > 1 || edges->parents->len > 1)) {
     static uint32_t parent_node_id = 0;
-    uint32_t parent_node_name_len = strlen("remodel_parent") + 10 + 1;
+    uint32_t parent_node_name_len = strlen(remodel_parent) + 10 + 1;
     char* parent_node_name = malloc(parent_node_name_len);
-    snprintf(parent_node_name, parent_node_name_len, "remodel_parent%d", parent_node_id);
+    snprintf(parent_node_name, parent_node_name_len, "%s%d", remodel_parent, parent_node_id);
     parent_node_id++;
 
     static uint32_t child_node_id = 0;
-    uint32_t child_node_name_len = strlen("remodel_child") + 10 + 1;
+    uint32_t child_node_name_len = strlen(remodel_child) + 10 + 1;
     char* child_node_name = malloc(child_node_name_len);
-    snprintf(child_node_name, parent_node_name_len, "remodel_child%d", child_node_id);
+    snprintf(child_node_name, parent_node_name_len, "%s%d", remodel_child, child_node_id);
     child_node_id++;
 
     array_t* parent_node = array_new();
@@ -174,13 +182,25 @@ array_t* remodel_roots(remodel_graph_t* graph) {
   return roots;
 }
 
+static bool is_internal_name(const char* name) {
+  return strncmp(name, remodel_parent, strlen(remodel_parent)) == 0 ||
+    strncmp(name, remodel_child, strlen(remodel_child)) == 0;
+}
+
 static void edge_execute(remodel_edge_t* edge) {
   if (options.debug) {
     fprintf(stderr, "[remodel] executing %s -> %s\n", edge->from->name, edge->to->name);
   }
 
-  // if the parent of this edge been modified, we want to regenerate the child
-  if (file_changed(edge->from->name)) {
+  // if the parent of this edge been modified, we want to regenerate the child.
+  // we only want to check nodes that we haven't inserted, but if the parents
+  // of one of our parent nodes have been modified, we should update the child.
+  edge->to->modified |= edge->from->modified;
+  if (is_internal_name(edge->from->name) && options.debug) {
+    fprintf(stderr, "[remodel] %s(%d) -> %s(%d)\n",
+            edge->from->name, edge->from->modified,
+            edge->to->name, edge->to->modified);
+  } else if (file_changed(edge->from->name)) {
     if (options.debug) {
       fprintf(stderr, "[remodel] %s modified on disk\n", edge->from->name);
       fprintf(stderr, "[remodel] %s has modified parent (%s)\n",
@@ -192,7 +212,7 @@ static void edge_execute(remodel_edge_t* edge) {
   }
 
   // if the child of this edge has been modified, we want to regenerate it.
-  if (file_changed(edge->to->name)) {
+  if (!is_internal_name(edge->to->name) && file_changed(edge->to->name)) {
     if (options.debug) {
       fprintf(stderr, "[remodel] %s modified on disk\n", edge->to->name);
     }

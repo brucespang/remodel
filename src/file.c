@@ -25,6 +25,8 @@
 #include "include/file.h"
 #include "include/remodel.h"
 
+extern remodel_options_t options;
+
 char* read_file(FILE* file) {
   struct stat stat;
   if (fstat(fileno(file), &stat) < 0) {
@@ -140,8 +142,8 @@ bool file_changed(const char* path) {
   // tmp file with the current thread's identifier and rename it to the original file name.
   uint32_t tmp_cache_path_len = cache_path_len + 1 + 3 + 1 + 10;
   tmp_cache_path = malloc(tmp_cache_path_len + 1);
-  pthread_t tid = pthread_self();
-  snprintf(tmp_cache_path, tmp_cache_path_len, "%s.tmp.%p", cache_path, &tid);
+  void* tid = pthread_self();
+  snprintf(tmp_cache_path, tmp_cache_path_len, "%s.tmp.%p", cache_path, tid);
   FILE* tmp_cache_file = fopen(tmp_cache_path, "w");
   if (!tmp_cache_file) {
     goto exit;

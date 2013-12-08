@@ -9,6 +9,8 @@
 #include "include/stack.h"
 #include "include/array.h"
 
+extern remodel_options_t options;
+
 static inline uint32_t min(uint32_t x, uint32_t y) {
   if (x < y) {
     return x;
@@ -17,7 +19,7 @@ static inline uint32_t min(uint32_t x, uint32_t y) {
   }
 }
 
-#define DEFAULT_NUM_THREADS 8
+#define DEFAULT_NUM_THREADS 1
 
 static const char* version = "0.0.1";
 static const char* usage = "Usage %s [-hv] [/path/to/remodel/file]\n";
