@@ -7,7 +7,7 @@ executable=remodel
 
 CC=clang
 CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align -Wno-language-extension-token -Wno-shorten-64-to-32
-LDFLAGS += -lck -lpthread
+LDFLAGS += -lck -lssl -lcrypto -lpthread
 
 LEX    = flex
 YACC   = bison -y
