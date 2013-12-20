@@ -6,8 +6,8 @@ include=include
 executable=remodel
 
 CC=clang
-CFLAGS += -I. -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align --coverage
-LDFLAGS += -lck -lcrypto -lssl -lpthread
+CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align --coverage
+LDFLAGS += -lck -lpthread
 
 LEX    = flex
 YACC   = bison -y
@@ -51,9 +51,15 @@ $(test_binaries): $(build)/% : $(test)/%.c
 clean-coverage:
 	rm -f $(build)/*.gcda $(build)/*.gcno
 
-$(bin)/$(executable): $(objects)
+ck/:
+	git clone https://github.com/sbahra/ck.git
+
+./ck/usr/local/lib/libck.so: ck/
+	bash -c 'cd ck && ./configure && make && DESTDIR=. make install'
+
+$(bin)/$(executable): ./ck/usr/local/lib/libck.so $(objects)
 	mkdir -p $(bin)/
-	$(CC) $(CFLAGS) $^ -o $(bin)/$(executable) $(LDFLAGS)
+	$(CC) $(CFLAGS) -L./ck/usr/local/lib $^ -o $(bin)/$(executable) $(LDFLAGS)
 
 .PHONY: compile
 compile: clean-coverage $(build)/ $(bin)/$(executable)
@@ -71,7 +77,7 @@ check:
 test: compile $(test_binaries)
 
 .PHONY: coverage
-coverage: test
+coverage: clean clean-coverage test
 	lcov -b . --no-checksum --capture --directory `pwd`/build --output-file coverage.info
 	genhtml --ignore-errors=source --branch-coverage --highlight --legend --output-directory cov coverage.info
 	open cov/index.html
