@@ -44,7 +44,7 @@ $(test_objects): $(build)/%.o : $(test)/%.c
 .PHONY: $(test_binaries)
 $(test_binaries): $(build)/% : $(test)/%.c
 	rm -f $@.gcda $@.gcno
-	$(CC) $(CFLAGS) $< $(filter-out $(build)/main.o, $(objects)) -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -L./ck/usr/local/lib $< $(filter-out $(build)/main.o, $(objects)) -o $@ $(LDFLAGS)
 	LD_LIBRARY_PATH=./ck/usr/local/lib/ $@
 
 .PHONY: clean-coverage
