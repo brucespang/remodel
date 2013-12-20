@@ -45,7 +45,7 @@ $(test_objects): $(build)/%.o : $(test)/%.c
 $(test_binaries): $(build)/% : $(test)/%.c
 	rm -f $@.gcda $@.gcno
 	$(CC) $(CFLAGS) $< $(filter-out $(build)/main.o, $(objects)) -o $@ $(LDFLAGS)
-	$@
+	LD_LIBRARY_PATH=./ck/usr/local/lib/ $@
 
 .PHONY: clean-coverage
 clean-coverage:
@@ -66,7 +66,7 @@ compile: clean-coverage $(build)/ $(bin)/$(executable)
 
 .PHONY: run
 run: compile
-	$(bin)/$(executable) remodel.remodel
+	LD_LIBRARY_PATH=./ck/usr/local/lib/ $(bin)/$(executable) remodel.remodel
 
 .PHONY: check
 check:
