@@ -6,7 +6,7 @@ include=include
 executable=remodel
 
 CC=clang
-CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align --coverage
+CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align -Wno-language-extension-token --coverage
 LDFLAGS += -lck -lpthread
 
 LEX    = flex
