@@ -6,7 +6,7 @@ include=include
 executable=remodel
 
 CC=clang
-CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align -Wno-language-extension-token -Wno-shorten-64-to-32 --coverage
+CFLAGS += -I. -I./ck/usr/local/include -g -Wall -Wextra -Werror -Weverything -Wno-unused-function -Wno-used-but-marked-unused -Wno-padded -Wno-cast-align -Wno-language-extension-token -Wno-shorten-64-to-32
 LDFLAGS += -lck -lpthread
 
 LEX    = flex
@@ -75,15 +75,6 @@ check:
 
 .PHONY: test
 test: compile $(test_binaries)
-
-.PHONY: coverage
-coverage: clean clean-coverage test
-	lcov -b . --no-checksum --capture --directory `pwd`/build --output-file coverage.info
-	genhtml --ignore-errors=source --branch-coverage --highlight --legend --output-directory cov coverage.info
-	open cov/index.html
-
-.PHONY: cov
-cov: coverage
 
 .PHONY: report
 report: report.tex report.bib
