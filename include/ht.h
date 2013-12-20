@@ -4,7 +4,6 @@
 #include <ck_hs.h>
 #include <ck_spinlock.h>
 #include <stdint.h>
-#include <phenom/refcnt.h>
 
 #define HT_ITERATOR_INITIALIZER CK_HS_ITERATOR_INITIALIZER
 
@@ -17,7 +16,6 @@ typedef struct {
 typedef struct ht {
   ck_hs_t map;
   ck_spinlock_t lock;
-  ph_refcnt_t ref;
   // we usually allocate memory for a key/value when inserting into a hash table.
   // we'd like to free that memory when we free the hash table. However, if we're
   // using ref counts, we may not know when the hash table is freed.
@@ -36,7 +34,5 @@ void ht_iterator_init(ht_iterator_t* it);
 bool ht_next(ht_t* ht, ht_iterator_t* it, ht_entry_t** entry);
 void ht_free(ht_t* ht);
 uint64_t ht_count(ht_t* ht);
-void ht_ref_add(ht_t* ht);
-void ht_ref_del(ht_t* ht);
 
 #endif  // HT_H_

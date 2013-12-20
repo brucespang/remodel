@@ -57,8 +57,6 @@ ht_t* ht_new(uint32_t capacity) {
                     ht_hash, ht_compare, &ck_malloc,
                     2*capacity, SEED));
 
-  ht_ref_add(ht);
-
   return ht;
 }
 
@@ -75,18 +73,6 @@ void ht_free(ht_t* ht) {
 
   ck_hs_destroy(&ht->map);
   free(ht);
-}
-
-void ht_ref_add(ht_t* ht) {
-  ph_refcnt_add(&ht->ref);
-}
-
-void ht_ref_del(ht_t* ht) {
-  if (!ph_refcnt_del(&ht->ref)) {
-    return;
-  }
-
-  ht_free(ht);
 }
 
 void* ht_get(ht_t* ht, const void* key, size_t key_len) {
